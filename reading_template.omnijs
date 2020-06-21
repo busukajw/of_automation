@@ -1,0 +1,66 @@
+/*{
+	"type": "action",
+	"targets": ["omnifocus"],
+	"author": "Aaron Walker",
+	"identifier": "com.omni-automation.reading-book",
+	"version": "0.1",
+	"description": "Creates a parralell project with a set of standard tasks.",
+	"label": "Active Reading",
+	"paletteLabel": "Read a book"
+}*/
+
+var _ = function(){
+	
+	var action = new PlugIn.Action(function(selection, sender) {
+	
+		var inputForm = new Form()
+		var dateFormatter = Formatter.Date.withStyle(Formatter.Date.Style.Short, Formatter.Date.Style.Short)
+
+		taskNameField = new Form.Field.String(
+			"bookTitle",
+			"Title",
+			"Name of Book"
+		)
+		inputForm.addField(taskNameField)
+		formPromise = inputForm.show("Enter the title of the book to continue","Continue")
+		
+		inputForm.validate = function(formObject){
+			textValue = formObject.values["bookTitle"]
+			textStatus = (textValue && textValue.length > 0) ? true:false
+			validation = (textStatus) ? true:false
+			return validation
+		}
+		
+		formPromise.then(function(formObject){		
+			bookTitle = formObject.values['bookTitle']
+			projectName = "Actively read " + bookTitle
+			var project = projectNamed(projectName) || new Project(projectName) 
+			project.status = Project.Status.Active
+			project.containsSingletonActions = false
+			projectItems = ["Complete inspectional read","What is the unity of the book",
+			"Write what the structure of the book is","Do I agree with the book",
+			"What questions was the author trying to answer","Create a literature note",
+			"Consider linking to other notes"]
+			projectItems.forEach((projectItem)=>{
+				action = project.taskNamed(projectItem) || new Task(projectItem, project)
+				//action.dueDate = StartDate
+				//action.note = ""
+			})
+			document.windows[0].perspective = Perspective.BuiltIn.Projects
+			document.windows[0].selectObjects([project])
+		})
+		
+		formPromise.catch(function(err){
+			console.log("form cancelled", err.message)
+		})
+	});
+
+	action.validate = function(selection, sender) {
+		// validation code
+		// selection options: tasks, projects, folders, tags
+		return true
+	};
+	
+	return action;
+}();
+_;
